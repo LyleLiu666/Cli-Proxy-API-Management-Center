@@ -7,6 +7,9 @@ import type { ReactElement, ReactNode } from 'react';
 import type { TFunction } from 'i18next';
 import type { AuthFileItem, ResolvedTheme, ThemeColors } from '@/types';
 import { TYPE_COLORS } from '@/utils/quota';
+import { Button } from '@/components/ui/Button';
+import { readPriorityValue } from './priorityEditor';
+import { IconRefreshCw } from '@/components/ui/icons';
 import styles from '@/pages/QuotaPage.module.scss';
 
 type QuotaStatus = 'idle' | 'loading' | 'success' | 'error';
@@ -65,7 +68,9 @@ interface QuotaCardProps<TState extends QuotaStatusState> {
   cardClassName: string;
   defaultType: string;
   canRefresh?: boolean;
+  canEditPriority?: boolean;
   onRefresh?: () => void;
+  onEditPriority?: () => void;
   renderQuotaItems: (quota: TState, t: TFunction, helpers: QuotaRenderHelpers) => ReactNode;
 }
 
@@ -78,7 +83,9 @@ export function QuotaCard<TState extends QuotaStatusState>({
   cardClassName,
   defaultType,
   canRefresh = false,
+  canEditPriority = false,
   onRefresh,
+  onEditPriority,
   renderQuotaItems
 }: QuotaCardProps<TState>) {
   const { t } = useTranslation();
@@ -94,7 +101,15 @@ export function QuotaCard<TState extends QuotaStatusState>({
     quota?.errorStatus,
     quota?.error || t('common.unknown_error')
   );
-  const idleMessageKey = onRefresh ? `${i18nPrefix}.idle` : (cardIdleMessageKey ?? `${i18nPrefix}.idle`);
+  const idleMessageKey = cardIdleMessageKey ?? `${i18nPrefix}.idle`;
+  const isRefreshing = quotaStatus === 'loading';
+  const refreshButtonLabel = t(`${i18nPrefix}.refresh_button`);
+  const editPriorityLabel = t('quota_management.edit_priority');
+  const priorityValue = readPriorityValue(item);
+  const priorityDisplay =
+    priorityValue === undefined
+      ? t('quota_management.priority_default')
+      : String(priorityValue);
 
   const getTypeLabel = (type: string): string => {
     const key = `auth_files.filter_${type}`;
@@ -107,35 +122,68 @@ export function QuotaCard<TState extends QuotaStatusState>({
   return (
     <div className={`${styles.fileCard} ${cardClassName}`}>
       <div className={styles.cardHeader}>
-        <span
-          className={styles.typeBadge}
-          style={{
-            backgroundColor: typeColor.bg,
-            color: typeColor.text,
-            ...(typeColor.border ? { border: typeColor.border } : {})
-          }}
-        >
-          {getTypeLabel(displayType)}
-        </span>
-        <span className={styles.fileName}>{item.name}</span>
+        <div className={styles.cardHeaderMain}>
+          <span
+            className={styles.typeBadge}
+            style={{
+              backgroundColor: typeColor.bg,
+              color: typeColor.text,
+              ...(typeColor.border ? { border: typeColor.border } : {})
+            }}
+          >
+            {getTypeLabel(displayType)}
+          </span>
+          <div className={styles.cardTitleStack}>
+            <span className={styles.fileName}>{item.name}</span>
+            <div className={styles.cardMetaRow}>
+              <span className={styles.priorityPill}>
+                <span className={styles.priorityPillLabel}>
+                  {t('auth_files.priority_display')}
+                </span>
+                <span className={styles.priorityPillValue}>{priorityDisplay}</span>
+              </span>
+            </div>
+          </div>
+        </div>
+        <div className={styles.cardHeaderActions}>
+          {onEditPriority ? (
+            <Button
+              type="button"
+              variant="secondary"
+              size="sm"
+              className={styles.cardPriorityButton}
+              onClick={onEditPriority}
+              disabled={!canEditPriority}
+              title={editPriorityLabel}
+              aria-label={editPriorityLabel}
+            >
+              {editPriorityLabel}
+            </Button>
+          ) : null}
+          {onRefresh ? (
+            <Button
+              type="button"
+              variant="secondary"
+              size="sm"
+              className={styles.cardRefreshButton}
+              onClick={onRefresh}
+              disabled={!canRefresh || isRefreshing}
+              loading={isRefreshing}
+              title={refreshButtonLabel}
+              aria-label={refreshButtonLabel}
+            >
+              {!isRefreshing && <IconRefreshCw size={14} />}
+              {refreshButtonLabel}
+            </Button>
+          ) : null}
+        </div>
       </div>
 
       <div className={styles.quotaSection}>
         {quotaStatus === 'loading' ? (
           <div className={styles.quotaMessage}>{t(`${i18nPrefix}.loading`)}</div>
         ) : quotaStatus === 'idle' ? (
-          onRefresh ? (
-            <button
-              type="button"
-              className={`${styles.quotaMessage} ${styles.quotaMessageAction}`}
-              onClick={onRefresh}
-              disabled={!canRefresh}
-            >
-              {t(idleMessageKey)}
-            </button>
-          ) : (
-            <div className={styles.quotaMessage}>{t(idleMessageKey)}</div>
-          )
+          <div className={styles.quotaMessage}>{t(idleMessageKey)}</div>
         ) : quotaStatus === 'error' ? (
           <div className={styles.quotaError}>
             {t(`${i18nPrefix}.load_failed`, {

@@ -76,30 +76,35 @@ export function QuotaPage() {
         files={files}
         loading={loading}
         disabled={disableControls}
+        onFilesChanged={loadFiles}
       />
       <QuotaSection
         config={ANTIGRAVITY_CONFIG}
         files={files}
         loading={loading}
         disabled={disableControls}
+        onFilesChanged={loadFiles}
       />
       <QuotaSection
         config={CODEX_CONFIG}
         files={files}
         loading={loading}
         disabled={disableControls}
+        onFilesChanged={loadFiles}
       />
       <QuotaSection
         config={GEMINI_CLI_CONFIG}
         files={files}
         loading={loading}
         disabled={disableControls}
+        onFilesChanged={loadFiles}
       />
       <QuotaSection
         config={KIMI_CONFIG}
         files={files}
         loading={loading}
         disabled={disableControls}
+        onFilesChanged={loadFiles}
       />
     </div>
   );

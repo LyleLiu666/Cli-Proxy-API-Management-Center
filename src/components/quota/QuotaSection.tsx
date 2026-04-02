@@ -8,11 +8,14 @@ import { Card } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import { EmptyState } from '@/components/ui/EmptyState';
 import { triggerHeaderRefresh } from '@/hooks/useHeaderRefresh';
+import { authFilesApi } from '@/services/api';
 import { useNotificationStore, useQuotaStore, useThemeStore } from '@/stores';
 import type { AuthFileItem, ResolvedTheme } from '@/types';
 import { getStatusFromError } from '@/utils/quota';
 import { QuotaCard } from './QuotaCard';
+import { QuotaPriorityEditorModal } from './QuotaPriorityEditorModal';
 import type { QuotaStatusState } from './QuotaCard';
+import { buildPriorityPatch, readPriorityValue } from './priorityEditor';
 import { useQuotaLoader } from './useQuotaLoader';
 import type { QuotaConfig } from './quotaConfigs';
 import { useGridColumns } from './useGridColumns';
@@ -96,13 +99,22 @@ interface QuotaSectionProps<TState extends QuotaStatusState, TData> {
   files: AuthFileItem[];
   loading: boolean;
   disabled: boolean;
+  onFilesChanged: () => Promise<void>;
+}
+
+interface PriorityEditorState {
+  error: string;
+  fileName: string;
+  saving: boolean;
+  value: string;
 }
 
 export function QuotaSection<TState extends QuotaStatusState, TData>({
   config,
   files,
   loading,
-  disabled
+  disabled,
+  onFilesChanged
 }: QuotaSectionProps<TState, TData>) {
   const { t } = useTranslation();
   const resolvedTheme: ResolvedTheme = useThemeStore((state) => state.resolvedTheme);
@@ -115,6 +127,7 @@ export function QuotaSection<TState extends QuotaStatusState, TData>({
   const [columns, gridRef] = useGridColumns(380); // Min card width 380px matches SCSS
   const [viewMode, setViewMode] = useState<ViewMode>('paged');
   const [showTooManyWarning, setShowTooManyWarning] = useState(false);
+  const [priorityEditor, setPriorityEditor] = useState<PriorityEditorState | null>(null);
 
   const filteredFiles = useMemo(() => files.filter((file) => config.filterFn(file)), [
     files,
@@ -237,6 +250,54 @@ export function QuotaSection<TState extends QuotaStatusState, TData>({
     [config, disabled, quota, setQuota, showNotification, t]
   );
 
+  const openPriorityEditor = useCallback((file: AuthFileItem) => {
+    const priority = readPriorityValue(file);
+    setPriorityEditor({
+      error: '',
+      fileName: file.name,
+      saving: false,
+      value: priority === undefined ? '' : String(priority)
+    });
+  }, []);
+
+  const closePriorityEditor = useCallback(() => {
+    setPriorityEditor((prev) => (prev?.saving ? prev : null));
+  }, []);
+
+  const handlePriorityValueChange = useCallback((value: string) => {
+    setPriorityEditor((prev) => (prev ? { ...prev, value, error: '' } : prev));
+  }, []);
+
+  const handlePrioritySave = useCallback(async () => {
+    if (!priorityEditor || disabled) return;
+
+    const patch = buildPriorityPatch(priorityEditor.value);
+    if (!patch) {
+      setPriorityEditor((prev) =>
+        prev ? { ...prev, error: t('quota_management.priority_invalid') } : prev
+      );
+      return;
+    }
+
+    const { fileName } = priorityEditor;
+    setPriorityEditor((prev) =>
+      prev && prev.fileName === fileName ? { ...prev, saving: true, error: '' } : prev
+    );
+
+    try {
+      await authFilesApi.patchFields({ name: fileName, ...patch });
+      showNotification(t('quota_management.priority_save_success', { name: fileName }), 'success');
+      await onFilesChanged();
+      setPriorityEditor(null);
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : t('notification.update_failed');
+      showNotification(`${t('notification.update_failed')}: ${message}`, 'error');
+      setPriorityEditor((prev) =>
+        prev && prev.fileName === fileName ? { ...prev, saving: false, error: message } : prev
+      );
+    }
+  }, [disabled, onFilesChanged, priorityEditor, showNotification, t]);
+
   const titleNode = (
     <div className={styles.titleWrapper}>
       <span>{t(`${config.i18nPrefix}.title`)}</span>
@@ -318,6 +379,8 @@ export function QuotaSection<TState extends QuotaStatusState, TData>({
                 cardClassName={config.cardClassName}
                 defaultType={config.type}
                 canRefresh={!disabled && !item.disabled}
+                canEditPriority={!disabled}
+                onEditPriority={() => openPriorityEditor(item)}
                 onRefresh={() => void refreshQuotaForFile(item)}
                 renderQuotaItems={config.renderQuotaItems}
               />
@@ -362,6 +425,17 @@ export function QuotaSection<TState extends QuotaStatusState, TData>({
           </div>
         </div>
       )}
+      <QuotaPriorityEditorModal
+        open={Boolean(priorityEditor)}
+        fileName={priorityEditor?.fileName ?? ''}
+        value={priorityEditor?.value ?? ''}
+        error={priorityEditor?.error ?? ''}
+        saving={priorityEditor?.saving ?? false}
+        disabled={disabled}
+        onChange={handlePriorityValueChange}
+        onClose={closePriorityEditor}
+        onSave={() => void handlePrioritySave()}
+      />
     </Card>
   );
 }

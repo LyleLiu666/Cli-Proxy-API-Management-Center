@@ -8,6 +8,7 @@ import type { AuthFileItem } from '@/types';
 import { useQuotaStore } from '@/stores';
 import { getStatusFromError } from '@/utils/quota';
 import type { QuotaConfig } from './quotaConfigs';
+import { loadSequentially } from './loadSequentially';
 
 type QuotaScope = 'page' | 'all';
 
@@ -47,42 +48,36 @@ export function useQuotaLoader<TState, TData>(config: QuotaConfig<TState, TData>
       try {
         if (targets.length === 0) return;
 
-        setQuota((prev) => {
-          const nextState = { ...prev };
-          targets.forEach((file) => {
-            nextState[file.name] = config.buildLoadingState();
-          });
-          return nextState;
-        });
+        await loadSequentially(targets, async (file): Promise<LoadQuotaResult<TData> | null> => {
+          if (requestId !== requestIdRef.current) return null;
 
-        const results = await Promise.all(
-          targets.map(async (file): Promise<LoadQuotaResult<TData>> => {
-            try {
-              const data = await config.fetchQuota(file, t);
-              return { name: file.name, status: 'success', data };
-            } catch (err: unknown) {
-              const message = err instanceof Error ? err.message : t('common.unknown_error');
-              const errorStatus = getStatusFromError(err);
-              return { name: file.name, status: 'error', error: message, errorStatus };
-            }
-          })
-        );
+          setQuota((prev) => ({
+            ...prev,
+            [file.name]: config.buildLoadingState()
+          }));
 
-        if (requestId !== requestIdRef.current) return;
+          try {
+            const data = await config.fetchQuota(file, t);
+            if (requestId !== requestIdRef.current) return null;
 
-        setQuota((prev) => {
-          const nextState = { ...prev };
-          results.forEach((result) => {
-            if (result.status === 'success') {
-              nextState[result.name] = config.buildSuccessState(result.data as TData);
-            } else {
-              nextState[result.name] = config.buildErrorState(
-                result.error || t('common.unknown_error'),
-                result.errorStatus
-              );
-            }
-          });
-          return nextState;
+            setQuota((prev) => ({
+              ...prev,
+              [file.name]: config.buildSuccessState(data)
+            }));
+
+            return { name: file.name, status: 'success', data };
+          } catch (err: unknown) {
+            if (requestId !== requestIdRef.current) return null;
+
+            const message = err instanceof Error ? err.message : t('common.unknown_error');
+            const errorStatus = getStatusFromError(err);
+            setQuota((prev) => ({
+              ...prev,
+              [file.name]: config.buildErrorState(message, errorStatus)
+            }));
+
+            return { name: file.name, status: 'error', error: message, errorStatus };
+          }
         });
       } finally {
         if (requestId === requestIdRef.current) {

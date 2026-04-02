@@ -610,8 +610,40 @@
 .cardHeader {
   display: flex;
   align-items: center;
+  justify-content: space-between;
   gap: $spacing-sm;
   min-height: 28px;
+
+  @include mobile {
+    align-items: flex-start;
+  }
+}
+
+.cardHeaderMain {
+  display: flex;
+  align-items: flex-start;
+  gap: $spacing-sm;
+  min-width: 0;
+  flex: 1;
+
+  @include mobile {
+    align-items: flex-start;
+  }
+}
+
+.cardTitleStack {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  gap: 6px;
+  min-width: 0;
+}
+
+.cardMetaRow {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
 }
 
 .typeBadge {
@@ -629,6 +661,64 @@
   color: var(--text-primary);
   word-break: break-all;
   line-height: 1.4;
+  flex: 1;
+  min-width: 0;
+}
+
+.priorityPill {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 10px;
+  border-radius: 999px;
+  border: 1px solid color-mix(in srgb, var(--border-color) 82%, transparent);
+  background: color-mix(in srgb, var(--bg-secondary) 92%, transparent);
+  font-size: 12px;
+  line-height: 1;
+}
+
+.priorityPillLabel {
+  color: var(--text-secondary);
+}
+
+.priorityPillValue {
+  font-weight: 700;
+  color: var(--text-primary);
+}
+
+.cardHeaderActions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 8px;
+  flex-wrap: wrap;
+  flex-shrink: 0;
+
+  @include mobile {
+    width: 100%;
+    justify-content: flex-start;
+  }
+}
+
+.cardPriorityButton:global(.btn.btn-sm),
+.cardRefreshButton:global(.btn.btn-sm) {
+  flex-shrink: 0;
+  padding-inline: 10px;
+
+  > span {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    white-space: nowrap;
+  }
+
+  @include mobile {
+    align-self: flex-start;
+  }
+}
+
+.cardPriorityButton:global(.btn.btn-sm) {
+  border-style: dashed;
 }
 
 .pagination {
@@ -676,4 +766,10 @@
     font-size: 14px;
     line-height: 1.6;
   }
+}
+
+.priorityEditorBody {
+  display: flex;
+  flex-direction: column;
+  gap: $spacing-sm;
 }
