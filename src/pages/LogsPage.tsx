@@ -34,7 +34,7 @@ import {
   resolveStatusGroup,
   type LogState,
 } from './hooks/logTypes';
-import { parseLogLine } from './hooks/logParsing';
+import { buildParsedLogEntries, filterParsedLogEntries } from './hooks/logSearch';
 import { useLogFilters } from './hooks/useLogFilters';
 import { isNearBottom, useLogScroller } from './hooks/useLogScroller';
 import { isTraceableRequestPath, useTraceResolver } from './hooks/useTraceResolver';
@@ -288,29 +288,29 @@ export function LogsPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [autoRefresh, connectionStatus]);
 
-  const visibleLines = useMemo(
-    () => logState.buffer.slice(logState.visibleFrom),
-    [logState.buffer, logState.visibleFrom]
+  const parsedBuffer = useMemo(() => buildParsedLogEntries(logState.buffer), [logState.buffer]);
+  const visibleEntries = useMemo(
+    () => parsedBuffer.slice(logState.visibleFrom),
+    [parsedBuffer, logState.visibleFrom]
   );
 
   const trimmedSearchQuery = deferredSearchQuery.trim();
   const isSearching = trimmedSearchQuery.length > 0;
-  const baseLines = isSearching ? logState.buffer : visibleLines;
+  const baseEntries = isSearching ? parsedBuffer : visibleEntries;
 
-  const parsedSearchLines = useMemo(() => {
-    let working = baseLines;
-
-    if (hideManagementLogs) {
-      working = working.filter((line) => !line.includes(MANAGEMENT_API_PREFIX));
-    }
-
-    if (trimmedSearchQuery) {
-      const queryLowered = trimmedSearchQuery.toLowerCase();
-      working = working.filter((line) => line.toLowerCase().includes(queryLowered));
-    }
-
-    return working.map((line) => parseLogLine(line));
-  }, [baseLines, hideManagementLogs, trimmedSearchQuery]);
+  const parsedSearchEntries = useMemo(
+    () =>
+      filterParsedLogEntries(baseEntries, {
+        hideManagementLogs,
+        managementPrefix: MANAGEMENT_API_PREFIX,
+        searchQuery: trimmedSearchQuery,
+      }),
+    [baseEntries, hideManagementLogs, trimmedSearchQuery]
+  );
+  const parsedSearchLines = useMemo(
+    () => parsedSearchEntries.map((entry) => entry.parsed),
+    [parsedSearchEntries]
+  );
 
   const filters = useLogFilters({ parsedLines: parsedSearchLines });
   const structuredFiltersPanelId = 'logs-structured-filters';
@@ -318,7 +318,7 @@ export function LogsPage() {
     filters.methodFilters.length + filters.statusFilters.length + filters.pathFilters.length;
 
   const { filteredParsedLines, filteredLines, removedCount } = useMemo(() => {
-    const filteredParsed = parsedSearchLines.filter((line) => {
+    const filteredEntries = parsedSearchEntries.filter(({ parsed: line }) => {
       if (
         filters.methodFilterSet.size > 0 &&
         (!line.method || !filters.methodFilterSet.has(line.method))
@@ -342,16 +342,16 @@ export function LogsPage() {
     });
 
     return {
-      filteredParsedLines: filteredParsed,
-      filteredLines: filteredParsed.map((line) => line.raw),
-      removedCount: Math.max(baseLines.length - filteredParsed.length, 0)
+      filteredParsedLines: filteredEntries.map((entry) => entry.parsed),
+      filteredLines: filteredEntries.map((entry) => entry.raw),
+      removedCount: Math.max(baseEntries.length - filteredEntries.length, 0)
     };
   }, [
-    baseLines,
+    baseEntries.length,
     filters.methodFilterSet,
     filters.pathFilterSet,
     filters.statusFilterSet,
-    parsedSearchLines
+    parsedSearchEntries
   ]);
 
   const parsedVisibleLines = useMemo(

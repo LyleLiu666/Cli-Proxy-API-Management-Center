@@ -1,25 +1,65 @@
+import { Suspense } from 'react';
 import { Navigate, useRoutes, type Location } from 'react-router-dom';
-import { DashboardPage } from '@/pages/DashboardPage';
-import { AiProvidersPage } from '@/pages/AiProvidersPage';
-import { AiProvidersAmpcodeEditPage } from '@/pages/AiProvidersAmpcodeEditPage';
-import { AiProvidersClaudeEditLayout } from '@/pages/AiProvidersClaudeEditLayout';
-import { AiProvidersClaudeEditPage } from '@/pages/AiProvidersClaudeEditPage';
-import { AiProvidersClaudeModelsPage } from '@/pages/AiProvidersClaudeModelsPage';
-import { AiProvidersCodexEditPage } from '@/pages/AiProvidersCodexEditPage';
-import { AiProvidersGeminiEditPage } from '@/pages/AiProvidersGeminiEditPage';
-import { AiProvidersOpenAIEditLayout } from '@/pages/AiProvidersOpenAIEditLayout';
-import { AiProvidersOpenAIEditPage } from '@/pages/AiProvidersOpenAIEditPage';
-import { AiProvidersOpenAIModelsPage } from '@/pages/AiProvidersOpenAIModelsPage';
-import { AiProvidersVertexEditPage } from '@/pages/AiProvidersVertexEditPage';
-import { AuthFilesPage } from '@/pages/AuthFilesPage';
-import { AuthFilesOAuthExcludedEditPage } from '@/pages/AuthFilesOAuthExcludedEditPage';
-import { AuthFilesOAuthModelAliasEditPage } from '@/pages/AuthFilesOAuthModelAliasEditPage';
-import { OAuthPage } from '@/pages/OAuthPage';
-import { QuotaPage } from '@/pages/QuotaPage';
-import { UsagePage } from '@/pages/UsagePage';
-import { ConfigPage } from '@/pages/ConfigPage';
-import { LogsPage } from '@/pages/LogsPage';
-import { SystemPage } from '@/pages/SystemPage';
+import { RouteLoadingFallback } from '@/router/RouteLoadingFallback';
+import { lazyRoute } from '@/router/lazyRoute';
+
+const DashboardPage = lazyRoute(() => import('@/pages/DashboardPage'), 'DashboardPage');
+const AiProvidersPage = lazyRoute(() => import('@/pages/AiProvidersPage'), 'AiProvidersPage');
+const AiProvidersAmpcodeEditPage = lazyRoute(
+  () => import('@/pages/AiProvidersAmpcodeEditPage'),
+  'AiProvidersAmpcodeEditPage'
+);
+const AiProvidersClaudeEditLayout = lazyRoute(
+  () => import('@/pages/AiProvidersClaudeEditLayout'),
+  'AiProvidersClaudeEditLayout'
+);
+const AiProvidersClaudeEditPage = lazyRoute(
+  () => import('@/pages/AiProvidersClaudeEditPage'),
+  'AiProvidersClaudeEditPage'
+);
+const AiProvidersClaudeModelsPage = lazyRoute(
+  () => import('@/pages/AiProvidersClaudeModelsPage'),
+  'AiProvidersClaudeModelsPage'
+);
+const AiProvidersCodexEditPage = lazyRoute(
+  () => import('@/pages/AiProvidersCodexEditPage'),
+  'AiProvidersCodexEditPage'
+);
+const AiProvidersGeminiEditPage = lazyRoute(
+  () => import('@/pages/AiProvidersGeminiEditPage'),
+  'AiProvidersGeminiEditPage'
+);
+const AiProvidersOpenAIEditLayout = lazyRoute(
+  () => import('@/pages/AiProvidersOpenAIEditLayout'),
+  'AiProvidersOpenAIEditLayout'
+);
+const AiProvidersOpenAIEditPage = lazyRoute(
+  () => import('@/pages/AiProvidersOpenAIEditPage'),
+  'AiProvidersOpenAIEditPage'
+);
+const AiProvidersOpenAIModelsPage = lazyRoute(
+  () => import('@/pages/AiProvidersOpenAIModelsPage'),
+  'AiProvidersOpenAIModelsPage'
+);
+const AiProvidersVertexEditPage = lazyRoute(
+  () => import('@/pages/AiProvidersVertexEditPage'),
+  'AiProvidersVertexEditPage'
+);
+const AuthFilesPage = lazyRoute(() => import('@/pages/AuthFilesPage'), 'AuthFilesPage');
+const AuthFilesOAuthExcludedEditPage = lazyRoute(
+  () => import('@/pages/AuthFilesOAuthExcludedEditPage'),
+  'AuthFilesOAuthExcludedEditPage'
+);
+const AuthFilesOAuthModelAliasEditPage = lazyRoute(
+  () => import('@/pages/AuthFilesOAuthModelAliasEditPage'),
+  'AuthFilesOAuthModelAliasEditPage'
+);
+const OAuthPage = lazyRoute(() => import('@/pages/OAuthPage'), 'OAuthPage');
+const QuotaPage = lazyRoute(() => import('@/pages/QuotaPage'), 'QuotaPage');
+const UsagePage = lazyRoute(() => import('@/pages/UsagePage'), 'UsagePage');
+const ConfigPage = lazyRoute(() => import('@/pages/ConfigPage'), 'ConfigPage');
+const LogsPage = lazyRoute(() => import('@/pages/LogsPage'), 'LogsPage');
+const SystemPage = lazyRoute(() => import('@/pages/SystemPage'), 'SystemPage');
 
 const mainRoutes = [
   { path: '/', element: <DashboardPage /> },
@@ -80,5 +120,5 @@ const mainRoutes = [
 ];
 
 export function MainRoutes({ location }: { location?: Location }) {
-  return useRoutes(mainRoutes, location);
+  return <Suspense fallback={<RouteLoadingFallback />}>{useRoutes(mainRoutes, location)}</Suspense>;
 }

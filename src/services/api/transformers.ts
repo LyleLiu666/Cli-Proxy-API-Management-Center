@@ -10,6 +10,7 @@ import type {
   AmpcodeUpstreamApiKeyMapping
 } from '@/types';
 import type { Config } from '@/types/config';
+import { normalizeApiKeyList } from '@/utils/apiKeys';
 import { buildHeaderObject } from '@/utils/headers';
 
 const isRecord = (value: unknown): value is Record<string, unknown> =>
@@ -395,7 +396,7 @@ export const normalizeConfigResponse = (raw: unknown): Config => {
   }
   const apiKeysRaw = raw['api-keys'] ?? raw.apiKeys;
   if (Array.isArray(apiKeysRaw)) {
-    config.apiKeys = apiKeysRaw.map((key) => String(key)).filter((key) => key.trim() !== '');
+    config.apiKeys = normalizeApiKeyList(apiKeysRaw);
   }
 
   const geminiList = raw['gemini-api-key'] ?? raw.geminiApiKey ?? raw.geminiApiKeys;

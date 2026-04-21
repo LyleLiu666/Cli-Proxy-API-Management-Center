@@ -1,11 +1,14 @@
-import { useEffect } from 'react';
+import { Suspense, useEffect } from 'react';
 import { Outlet, RouterProvider, createHashRouter } from 'react-router-dom';
-import { LoginPage } from '@/pages/LoginPage';
 import { NotificationContainer } from '@/components/common/NotificationContainer';
 import { ConfirmationModal } from '@/components/common/ConfirmationModal';
-import { MainLayout } from '@/components/layout/MainLayout';
 import { ProtectedRoute } from '@/router/ProtectedRoute';
+import { RouteLoadingFallback } from '@/router/RouteLoadingFallback';
+import { lazyRoute } from '@/router/lazyRoute';
 import { useLanguageStore, useThemeStore } from '@/stores';
+
+const LoginPage = lazyRoute(() => import('@/pages/LoginPage'), 'LoginPage');
+const MainLayout = lazyRoute(() => import('@/components/layout/MainLayout'), 'MainLayout');
 
 function RootShell() {
   return (
@@ -53,7 +56,11 @@ function App() {
     document.documentElement.lang = language;
   }, [language]);
 
-  return <RouterProvider router={router} />;
+  return (
+    <Suspense fallback={<RouteLoadingFallback />}>
+      <RouterProvider router={router} />
+    </Suspense>
+  );
 }
 
 export default App;

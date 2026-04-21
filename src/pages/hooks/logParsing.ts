@@ -1,4 +1,4 @@
-import { HTTP_METHODS, type HttpMethod, type LogLevel, type ParsedLogLine } from './logTypes';
+import { HTTP_METHODS, type HttpMethod, type LogLevel, type ParsedLogLine } from './logTypes.ts';
 
 const HTTP_METHOD_REGEX = new RegExp(`\\b(${HTTP_METHODS.join('|')})\\b`);
 
@@ -272,4 +272,3 @@ export const parseLogLine = (raw: string): ParsedLogLine => {
     message,
   };
 };
-
