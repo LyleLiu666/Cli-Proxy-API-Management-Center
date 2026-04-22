@@ -118,8 +118,9 @@ npm run build
 ## 构建与发布说明
 
 - 使用 Vite 输出 **单文件 HTML**（`dist/index.html`），资源全部内联（`vite-plugin-singlefile`）。
-- 打 `vX.Y.Z` 标签会触发 `.github/workflows/release.yml`，发布 `dist/management.html`。
-- 页脚显示的 UI 版本在构建期注入（优先使用环境变量 `VERSION`，否则使用 git tag / `package.json`）。
+- 打 `v*` 标签会触发 `.github/workflows/release.yml`，发布 `dist/management.html`。在 fork 仓库中，像 `v1.7.41` 这种纯上游风格标签会被拦住，避免版本混淆。
+- 页脚显示的 UI 版本在构建期注入（优先使用环境变量 `VERSION`，否则使用 git tag / `package.json`）。如果这是 fork 构建，页面会自动附加类似 `+fork.lyleliu666` 的 fork 标识，避免看起来和 upstream 完全一样。
+- 对 fork 发版时，不要直接复用上游那种纯 `vX.Y.Z` 标签。建议使用类似 `v1.7.41-lyleliu666.1` 的 fork 专属版本号。
 
 ## 安全提示
 
@@ -150,6 +151,7 @@ npm run type-check # tsc --noEmit
 - 这个 fork 保留 `upstream`，主要用途是**定期同步上游的新特性与修复**，不是默认把日常改动提 PR 给上游。
 - 平时开发与提交，默认还是以自己的 `origin` 为主；需要跟进上游能力时，再把上游改动同步到当前 fork。
 - 如果这次同步看起来风险较高，先切一个临时分支演练，验证通过后再合回 `main`。
+- 版本号也应保持 fork 自己的标识。即使底层同步自同一个上游版本，也不要继续直接复用和 upstream 完全一样的发布版本号。
 
 推荐流程：
 

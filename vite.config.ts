@@ -4,35 +4,58 @@ import { viteSingleFile } from 'vite-plugin-singlefile';
 import path from 'path';
 import { execSync } from 'child_process';
 import fs from 'fs';
+import { formatBuildVersion } from './src/utils/buildVersion.ts';
 
 // Get version from environment, git tag, or package.json
 function getVersion(): string {
+  let rawVersion = '';
+
   // 1. Environment variable (set by GitHub Actions)
   if (process.env.VERSION) {
-    return process.env.VERSION;
+    rawVersion = process.env.VERSION;
   }
 
   // 2. Try git tag
-  try {
-    const gitTag = execSync('git describe --tags --exact-match 2>/dev/null || git describe --tags 2>/dev/null || echo ""', { encoding: 'utf8' }).trim();
-    if (gitTag) {
-      return gitTag;
+  if (!rawVersion) {
+    try {
+      const gitTag = execSync(
+        'git describe --tags --exact-match 2>/dev/null || git describe --tags 2>/dev/null || echo ""',
+        { encoding: 'utf8' }
+      ).trim();
+      if (gitTag) {
+        rawVersion = gitTag;
+      }
+    } catch {
+      // Git not available or no tags
     }
-  } catch {
-    // Git not available or no tags
   }
 
   // 3. Fall back to package.json version
-  try {
-    const pkg = JSON.parse(fs.readFileSync(path.resolve(__dirname, 'package.json'), 'utf8'));
-    if (pkg.version && pkg.version !== '0.0.0') {
-      return pkg.version;
+  if (!rawVersion) {
+    try {
+      const pkg = JSON.parse(fs.readFileSync(path.resolve(__dirname, 'package.json'), 'utf8'));
+      if (pkg.version && pkg.version !== '0.0.0') {
+        rawVersion = pkg.version;
+      }
+    } catch {
+      // package.json not readable
     }
-  } catch {
-    // package.json not readable
   }
 
-  return 'dev';
+  let originRemoteUrl = '';
+  try {
+    originRemoteUrl = execSync('git config --get remote.origin.url 2>/dev/null || echo ""', {
+      encoding: 'utf8',
+    }).trim();
+  } catch {
+    // ignore missing git remote
+  }
+
+  return formatBuildVersion({
+    rawVersion: rawVersion || 'dev',
+    originRemoteUrl,
+    forkLabel: process.env.FORK_VERSION_LABEL,
+  });
 }
 
 // https://vitejs.dev/config/

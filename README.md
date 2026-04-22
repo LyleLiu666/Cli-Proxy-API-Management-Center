@@ -119,8 +119,9 @@ The UI language is automatically detected from browser settings and can be manua
 ## Build & release notes
 
 - Vite produces a **single HTML** output (`dist/index.html`) with all assets inlined (via `vite-plugin-singlefile`).
-- Tagging `vX.Y.Z` triggers `.github/workflows/release.yml` to publish `dist/management.html`.
-- The UI version shown in the footer is injected at build time (env `VERSION`, git tag, or `package.json` fallback).
+- Tagging `v*` triggers `.github/workflows/release.yml` to publish `dist/management.html`. In forks, plain upstream-style tags such as `v1.7.41` are blocked to avoid ambiguous releases.
+- The UI version shown in the footer is injected at build time (env `VERSION`, git tag, or `package.json` fallback). On fork builds, the app automatically appends a fork marker such as `+fork.lyleliu666` to avoid looking identical to upstream.
+- For fork releases, do not reuse the upstream-style plain tag by itself. Prefer a fork-specific tag such as `v1.7.41-lyleliu666.1`.
 
 ## Security notes
 
@@ -151,6 +152,7 @@ npm run type-check # tsc --noEmit
 - This fork keeps `upstream` mainly for **periodic feature/fix sync**, not as the default target for day-to-day pull requests.
 - Routine development should still go to `origin`; when we want new upstream work, we pull it into this fork on our side.
 - If the sync looks risky, do it on a temporary branch first, verify it, and only then merge it back to `main`.
+- Version numbers should also stay fork-specific. Even when synced from the same upstream base, our fork release should use its own suffix instead of reusing the exact upstream release number.
 
 Recommended flow:
 

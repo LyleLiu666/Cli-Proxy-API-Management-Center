@@ -19,6 +19,19 @@ jobs:
           fetch-depth: 0
           fetch-tags: true
 
+      - name: Validate fork release tag
+        if: github.repository_owner != 'router-for-me'
+        run: |
+          set -euo pipefail
+          current_tag="${GITHUB_REF_NAME}"
+          owner_slug="$(printf '%s' "${GITHUB_REPOSITORY_OWNER}" | tr '[:upper:]' '[:lower:]' | sed -E 's/[^a-z0-9]+/-/g; s/^-+//; s/-+$//')"
+
+          if printf '%s' "${current_tag}" | grep -Eq '^v[0-9]+\.[0-9]+\.[0-9]+$'; then
+            echo "Fork releases must use a fork-specific tag to avoid colliding with upstream versions."
+            echo "Use a tag like: v1.7.41-${owner_slug}.1"
+            exit 1
+          fi
+
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
@@ -32,6 +45,7 @@ jobs:
         run: npm run build
         env:
           VERSION: ${{ github.ref_name }}
+          FORK_VERSION_LABEL: ${{ github.repository_owner }}
 
       - name: Prepare release assets
         run: |
