@@ -146,6 +146,27 @@ npm run format     # Prettier
 npm run type-check # tsc --noEmit
 ```
 
+## Upstream sync policy
+
+- This fork keeps `upstream` mainly for **periodic feature/fix sync**, not as the default target for day-to-day pull requests.
+- Routine development should still go to `origin`; when we want new upstream work, we pull it into this fork on our side.
+- If the sync looks risky, do it on a temporary branch first, verify it, and only then merge it back to `main`.
+
+Recommended flow:
+
+```bash
+git fetch upstream --prune
+git checkout -b sync/upstream-YYYY-MM-DD main
+git merge upstream/main
+npm run lint
+npm run type-check
+npm run build
+git checkout main
+git merge sync/upstream-YYYY-MM-DD
+```
+
+If you only want part of the upstream changes, prefer `git cherry-pick <commit>` instead of merging the whole `upstream/main`.
+
 ## Contributing
 
 Issues and PRs are welcome. Please include:

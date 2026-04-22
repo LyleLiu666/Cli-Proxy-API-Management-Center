@@ -145,6 +145,27 @@ npm run format     # Prettier
 npm run type-check # tsc --noEmit
 ```
 
+## Upstream 同步原则
+
+- 这个 fork 保留 `upstream`，主要用途是**定期同步上游的新特性与修复**，不是默认把日常改动提 PR 给上游。
+- 平时开发与提交，默认还是以自己的 `origin` 为主；需要跟进上游能力时，再把上游改动同步到当前 fork。
+- 如果这次同步看起来风险较高，先切一个临时分支演练，验证通过后再合回 `main`。
+
+推荐流程：
+
+```bash
+git fetch upstream --prune
+git checkout -b sync/upstream-YYYY-MM-DD main
+git merge upstream/main
+npm run lint
+npm run type-check
+npm run build
+git checkout main
+git merge sync/upstream-YYYY-MM-DD
+```
+
+如果你只想拿上游的一部分改动，优先使用 `git cherry-pick <commit>`，不要一次性合并整个 `upstream/main`。
+
 ## 贡献
 
 欢迎提 Issue 与 PR。建议附上：
