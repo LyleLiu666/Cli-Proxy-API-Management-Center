@@ -5,7 +5,7 @@ type RouteComponent<TModuleValue> =
   TModuleValue extends ComponentType<infer Props> ? ComponentType<Props> : never;
 type RouteExportName<TModule extends LazyModule> = Extract<
   {
-    [K in keyof TModule]: TModule[K] extends ComponentType<infer _Props> ? K : never;
+    [K in keyof TModule]: RouteComponent<TModule[K]> extends never ? never : K;
   }[keyof TModule],
   string
 >;
