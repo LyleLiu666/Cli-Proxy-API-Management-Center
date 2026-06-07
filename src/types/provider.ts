@@ -13,7 +13,6 @@ export interface ModelAlias {
 export interface ApiKeyEntry {
   apiKey: string;
   proxyUrl?: string;
-  headers?: Record<string, string>;
   authIndex?: string;
 }
 
@@ -54,6 +53,7 @@ export interface OpenAIProviderConfig {
   prefix?: string;
   baseUrl: string;
   apiKeyEntries: ApiKeyEntry[];
+  disabled?: boolean;
   headers?: Record<string, string>;
   models?: ModelAlias[];
   priority?: number;

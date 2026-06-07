@@ -285,7 +285,7 @@ export function QuotaSection<TState extends QuotaStatusState, TData>({
     );
 
     try {
-      await authFilesApi.patchFields({ name: fileName, ...patch });
+      await authFilesApi.patchFields(fileName, patch);
       showNotification(t('quota_management.priority_save_success', { name: fileName }), 'success');
       await onFilesChanged();
       setPriorityEditor(null);
